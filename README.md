@@ -2,6 +2,9 @@
 
 A full-stack web application for DoorDash drivers to track earnings, analyze performance metrics, and visualize delivery data.
 
+![Demo](https://github.com/user-attachments/assets/a981b149-1c96-4958-8b6f-0df303e0bb22)
+
+
 ## Features
 
 - **Earnings Dashboard**: Track your total earnings, active time, and dash time
