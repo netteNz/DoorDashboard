@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <!-- In the <head> section, add this before your existing scripts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap"
+    rel="stylesheet">
+  <script type="module" src="/src/main.jsx"></script>
+  <title>DoorDash Tracker Demo</title>
+  <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+  <style>
+    .mono-head {
+      font-family: 'Fira Mono', monospace;
+    }
+  </style>
+</head>
+<div id="root">
+
+  <body class="bg-gray-900 text-gray-200">
+    <div class="max-w-4xl mx-auto p-6">
+      <h1 class="mono-head text-3xl text-center mb-8">DoorDash Tracker (Demo)</h1>
+
+      <!-- Chart card -->
+      <div class="bg-gray-800 rounded-2xl p-6 mb-8">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="mono-head text-xl">Earnings & Activity (Spline)</h2>
+          <div class="space-x-2">
+            <span
+              class="inline-block bg-green-600 text-white text-xs font-medium px-3 py-1 rounded-full">Earnings</span>
+            <span class="inline-block bg-yellow-600 text-white text-xs font-medium px-3 py-1 rounded-full">Deliveries
+              Value</span>
+          </div>
+        </div>
+        <div id="chart" class="w-full h-80"></div>
+      </div>
+
+      <!-- Summary cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="bg-gray-800 rounded-2xl p-6 text-center">
+          <h2 class="mono-head mb-2">Total Miles</h2>
+          <p id="total-miles" class="text-4xl font-bold">–</p>
+        </div>
+        <div class="bg-gray-800 rounded-2xl p-6 text-center">
+          <h2 class="mono-head mb-2">Total Earnings</h2>
+          <p id="total-earnings" class="text-4xl font-bold">–</p>
+        </div>
+        <div class="bg-gray-800 rounded-2xl p-6 text-center">
+          <h2 class="mono-head mb-2">Total Gas</h2>
+          <p id="total-gas" class="text-4xl font-bold">–</p>
+        </div>
+        <div class="bg-gray-800 rounded-2xl p-6 text-center">
+          <h2 class="mono-head mb-2">Sessions</h2>
+          <p id="session-count" class="text-4xl font-bold">–</p>
+        </div>
+      </div>
+
+      <!-- Sessions table -->
+      <div class="bg-gray-800 rounded-2xl p-6">
+        <h2 class="mono-head text-xl mb-4">Session Details</h2>
+        <div class="overflow-x-auto">
+          <table class="min-w-full table-auto text-left">
+            <thead class="border-b border-gray-700">
+              <tr>
+                <th class="px-4 py-2">Date</th>
+                <th class="px-4 py-2">Miles</th>
+                <th class="px-4 py-2">Gas</th>
+                <th class="px-4 py-2">Earnings</th>
+                <th class="px-4 py-2">Net</th>
+              </tr>
+            </thead>
+            <tbody id="sessions-table" class="divide-y divide-gray-700"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+</div>
+
+<script>
+  async function initDemo() {
+    const [sum, ts] = await Promise.all([
+      fetch('/api/summary').then(r => r.json()),
+      fetch('/api/timeseries').then(r => r.json())
+    ]);
+
+    // Fill summary
+    document.getElementById('total-miles').innerText = '–';  // No miles data
+    document.getElementById('total-earnings').innerText = '$' + sum.total_earnings.toFixed(2);
+    document.getElementById('total-gas').innerText = '–';  // No gas data
+    document.getElementById('session-count').innerText = sum.total_sessions;
+
+    // Prepare data for chart using only earnings (since we don't have gas data)
+    const earnData = ts.map(s => [new Date(s.date).getTime(), s.earnings]);
+
+    // Create a dummy series for comparison (using deliveries count * 2 as placeholder)
+    const deliveryData = ts.map(s => [new Date(s.date).getTime(), s.deliveries * 2]);
+
+    // Spline area chart options
+    const options = {
+      chart: {
+        type: 'area',
+        height: '100%',
+        zoom: { enabled: false },
+        toolbar: { show: false }
+      },
+      series: [
+        { name: 'Earnings', data: earnData },
+        { name: 'Deliveries Value', data: deliveryData }
+      ],
+      stroke: {
+        curve: 'smooth',
+        width: 3
+      },
+      fill: {
+        type: 'gradient',
+        gradient: {
+          shadeIntensity: 1,
+          opacityFrom: 0.6,
+          opacityTo: 0.1,
+          stops: [0, 90, 100]
+        }
+      },
+      markers: {
+        size: 4,
+        hover: { size: 6 }
+      },
+      xaxis: {
+        type: 'datetime',
+        axisBorder: { color: '#374151' },
+        axisTicks: { color: '#4B5563' }
+      },
+      yaxis: {
+        labels: { style: { colors: '#9CA3AF' } }
+      },
+      tooltip: {
+        theme: 'dark',
+        x: { format: 'yyyy-MM-dd' }
+      },
+      grid: {
+        borderColor: '#374151',
+        strokeDashArray: 4
+      },
+      colors: ['#4CAF50', '#F59E0B']
+    };
+
+    new ApexCharts(document.querySelector('#chart'), options).render();
+
+    // Build table with available data
+    const tbody = document.getElementById('sessions-table');
+    ts.forEach(s => {
+      const tr = document.createElement('tr');
+      tr.className = 'hover:bg-gray-700';
+      tr.innerHTML = `
+          <td class="px-4 py-2">${s.date}</td>
+          <td class="px-4 py-2">–</td>
+          <td class="px-4 py-2">–</td>
+          <td class="px-4 py-2">$${s.earnings.toFixed(2)}</td>
+          <td class="px-4 py-2">$${s.earnings.toFixed(2)}</td>
+        `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', initDemo);
+</script>
+</body>
+
+</html>
