@@ -62,7 +62,7 @@ npm install
 
 ## Development
 
-4. Start the Flask backend server
+1. Start the Flask backend server
 
 ```bash
 cd server
@@ -70,7 +70,7 @@ python app.py
 ```
 This will start the API server at http://localhost:5000
 
-5. Start the React frontend development server
+2. Start the React frontend development server
 
 ```bash
 cd client
