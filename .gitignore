@@ -25,7 +25,7 @@ lerna-debug.log*
 *.sw?
 
 # Personal delivery data
-server\data\*.json
+server\data\doordash_sessions.json
 # Personal delivery data
 server/data/doordash_sessions.json
 
