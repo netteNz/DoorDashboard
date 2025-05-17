@@ -126,7 +126,7 @@ This will start the development server at http://localhost:5173
 
 The application uses a JSON structure for storing delivery sessions:
 
-- **Note**: Rename the file inside the server/data/ dir from `doordash_sessions.example.json` to `rename doordash_sessions.json`
+- **Note**: Rename the file inside the server/data/ dir from `doordash_sessions.example.json` to `doordash_sessions.json`
 
 ```json
 {
