@@ -1,27 +1,25 @@
 {
   "sessions": [
     {
-      "session_id": "1234567890abcdef",
-      "user_id": "user_12345",
-      "restaurant_id": "restaurant_67890",
-      "order_id": "order_abcde12345",
-      "timestamp": "2023-10-01T12:00:00Z",
-      "status": "completed",
-      "total_amount": 25.5,
-      "items": [
+      "date": "2025-04-28",
+      "start_time": "21:43",
+      "end_time": "22:20",
+      "active_time_minutes": 32.0,
+      "dash_time_minutes": 37.0,
+      "deliveries_count": 1.0,
+      "deliveries": [
         {
-          "item_id": "item_1",
-          "name": "Cheeseburger",
-          "quantity": 2,
-          "price": 5.99
-        },
-        {
-          "item_id": "item_2",
-          "name": "Fries",
-          "quantity": 1,
-          "price": 2.99
+          "restaurant": "Just Salad",
+          "doordash_pay": 6.75,
+          "tip": 9.0,
+          "total": 15.75,
+          "merchant_type": "Restaurant"
         }
-      ]
+      ],
+      "earnings": 15.75
+    },
+    {
+
     }
   ]
 }
