@@ -24,11 +24,9 @@ lerna-debug.log*
 *.sln
 *.sw?
 
-server/data/
-# Personal delivery data
-server\data\doordash_sessions.json
-# Personal delivery data
-server/data/doordash_sessions.json
+# Server data files - use only forward slashes
+server/data/*.json
+!server/data/*.example.json
 
 # Python
 __pycache__/
