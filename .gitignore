@@ -27,7 +27,7 @@ lerna-debug.log*
 # Personal delivery data
 server\data\*.json
 # Personal delivery data
-server/data/*.json
+server/data/doordash_sessions.json
 
 # Python
 __pycache__/
