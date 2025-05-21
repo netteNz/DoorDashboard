@@ -35,3 +35,39 @@ __pycache__/
 .env
 venv/
 .pytest_cache/
+
+# User data and credentials
+server/data/users.json
+
+# Environment configuration
+.env.local
+.env.development
+.env.test
+.env.production
+.flaskenv
+
+# Coverage reports
+coverage/
+.coverage
+htmlcov/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+.temp/
+*.tmp
+*.bak
+
+# JWT keys
+*.pem
+*.key
+
+# Build artifacts
+.vite/
+.cache/

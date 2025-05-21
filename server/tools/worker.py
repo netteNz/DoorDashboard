@@ -2,9 +2,16 @@ import json
 from pathlib import Path
 import time
 from collections import defaultdict
+import sys
+from pathlib import Path
 
-DATA_FILE = Path(__file__).parent / "data/doordash_sessions.json"
-CACHE_FILE = Path(__file__).parent / "data/cache.json"
+# Add parent directory to path so we can import modules
+sys.path.append(str(Path(__file__).parent.parent))
+
+# Update file paths to use the project root
+PROJECT_ROOT = Path(__file__).parent.parent
+DATA_FILE = PROJECT_ROOT / "data/doordash_sessions.json"
+CACHE_FILE = PROJECT_ROOT / "data/cache.json"
 
 def ensure_numeric(value):
     """Convert various data types to a numeric (float) value"""

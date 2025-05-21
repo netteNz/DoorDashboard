@@ -157,3 +157,14 @@ class DoorDashDataService:
         except Exception as e:
             print(f"Error deleting session: {e}")
             return False
+
+    def refresh_cache(self):
+        """Force refresh of the data cache"""
+        # Reset internal cache to force reload from file
+        if hasattr(self, '_data'):
+            self._data = None
+        if hasattr(self, '_last_load_time'):
+            self._last_load_time = 0
+        
+        # Load fresh data
+        return self.load_data()

@@ -1,7 +1,4 @@
-# Core web framework
-Flask==2.0.3
-Flask-CORS==3.0.10
-# API serialization
-flask-restful==0.3.9
-# Optional: Database support if needed in future
-SQLAlchemy==2.0.4
+flask
+flask-cors
+flask-jwt-extended
+python-dotenv        # optional, lets you run locally with a .env file
