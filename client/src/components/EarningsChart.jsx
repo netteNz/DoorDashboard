@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import ReactApexChart from 'react-apexcharts';
+import apiClient from '../utils/apiClient'; // Adjust the import based on your project structure
 
 // Keep utility functions outside component
 const formatNumber = (value) => {
@@ -256,51 +257,90 @@ const EarningsChart = () => {
     };
   }, [viewMode, seriesData]);
 
+  // Get current total earnings based on filtered data
+  const currentTotalEarnings = useMemo(() => {
+    // Get base earnings from chart data
+    let baseEarnings = 0;
+    if (filteredData.cumulativeEarnings?.length > 0) {
+      baseEarnings = filteredData.cumulativeEarnings[filteredData.cumulativeEarnings.length - 1][1];
+    }
+    
+    // Always add $50 challenge bonus
+    const challengeBonus = 50;
+    
+    // Store the bonus in chartData for reference elsewhere
+    if (!chartData.challengeBonusTotal) {
+      setChartData(prev => ({
+        ...prev,
+        challengeBonusTotal: challengeBonus
+      }));
+    }
+    
+    // Return the combined total
+    return baseEarnings + challengeBonus;
+  }, [filteredData, chartData, setChartData]);
+
   useEffect(() => {
     async function fetchData() {
       try {
         setLoading(true);
-        const response = await fetch('http://localhost:5000/api/timeseries');
+        const response = await apiClient.get('/api/timeseries');
+        
         if (!response.ok) throw new Error('Network response was not ok');
         const data = await response.json();
-        if (!data || data.length === 0) {
+        
+        // Handle the case where data is an object with arrays instead of an array of objects
+        if (!data) {
           setError("No data available");
           setLoading(false);
           return;
         }
-        data.sort((a, b) => new Date(a.date) - new Date(b.date));
-        const processedData = data.reduce((result, session) => {
-          const sessionEarnings = session.deliveries?.reduce(
-            (sum, delivery) => sum + (typeof delivery.total === 'number' ? delivery.total : parseFloat(delivery.total) || 0), 0
-          ) || 0;
-          const timestamp = new Date(session.date).getTime();
-          result.runningEarnings += sessionEarnings;
-          result.runningDeliveries += session.deliveries_count || 0;
-          result.runningActiveTime += session.active_time_minutes || 0;
-          result.runningDashTime += session.dash_time_minutes || 0;
-          result.earnings.push([timestamp, result.runningEarnings]);
-          result.deliveries.push([timestamp, result.runningDeliveries]);
-          result.activeTime.push([timestamp, result.runningActiveTime]);
-          result.dashTime.push([timestamp, result.runningDashTime]);
-          return result;
-        }, {
-          runningEarnings: 0,
-          runningDeliveries: 0,
-          runningActiveTime: 0,
-          runningDashTime: 0,
-          earnings: [],
-          deliveries: [],
-          activeTime: [],
-          dashTime: []
-        });
-        setChartData({
-          cumulativeEarnings: simplifyDataPoints(processedData.earnings),
-          deliveryCount: simplifyDataPoints(processedData.deliveries),
-          cumulativeActiveTime: simplifyDataPoints(processedData.activeTime),
-          cumulativeDashTime: simplifyDataPoints(processedData.dashTime)
-        });
+        
+        // Check if we have the expected format (matching your API response)
+        if (data.labels && Array.isArray(data.labels)) {
+          // Process object format with labels and data arrays
+          const processedData = {
+            runningEarnings: 0,
+            runningDeliveries: 0,
+            runningActiveTime: 0,
+            runningDashTime: 0,
+            earnings: [],
+            deliveries: [],
+            activeTime: [],
+            dashTime: []
+          };
+          
+          // Process the paired arrays
+          data.labels.forEach((dateStr, index) => {
+            const timestamp = new Date(dateStr).getTime();
+            const earnings = data.earnings[index] || 0;
+            const deliveries = data.deliveries[index] || 0;
+            const activeTime = data.active_time && data.active_time[index] ? data.active_time[index] : 0;
+            const dashTime = data.dash_time && data.dash_time[index] ? data.dash_time[index] : 0;
+            
+            processedData.runningEarnings += earnings;
+            processedData.runningDeliveries += deliveries;
+            processedData.runningActiveTime += activeTime;
+            processedData.runningDashTime += dashTime;
+            
+            processedData.earnings.push([timestamp, processedData.runningEarnings]);
+            processedData.deliveries.push([timestamp, processedData.runningDeliveries]);
+            processedData.activeTime.push([timestamp, processedData.runningActiveTime]);
+            processedData.dashTime.push([timestamp, processedData.runningDashTime]);
+          });
+          
+          setChartData({
+            cumulativeEarnings: simplifyDataPoints(processedData.earnings),
+            deliveryCount: simplifyDataPoints(processedData.deliveries),
+            cumulativeActiveTime: simplifyDataPoints(processedData.activeTime),
+            cumulativeDashTime: simplifyDataPoints(processedData.dashTime)
+          });
+        } else {
+          setError("Unexpected data format from API");
+        }
       } catch (err) {
         setError(err.message);
+        console.error('Chart error:', err);
       } finally {
         setLoading(false);
       }
@@ -355,11 +395,25 @@ const EarningsChart = () => {
 
   return (
     <div className="bg-gray-800/80 backdrop-blur-md rounded-2xl p-6 mb-8 border border-gray-700/50 shadow-xl">
+      {/* Chart header with correct earnings */}
       <div className="flex items-center justify-between mb-4">
-        <h2 className="font-mono text-xl bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-500">
-          {viewMode === 'earnings' ? 'Cumulative Earnings Growth' : 'Delivery Time Metrics'}
-        </h2>
-
+        <div>
+          <h2 className="font-mono text-xl text-gray-300">
+            Earnings & Deliveries
+          </h2>
+          
+          <div className="mt-1">
+            <span className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-emerald-500">
+              ${currentTotalEarnings.toFixed(2)}
+            </span>
+            <span className="text-sm text-gray-400 ml-2">
+              {timeRange === 'all' ? 'All Time' : timeRange === '7d' ? '7 Days' : 
+               timeRange === '30d' ? '30 Days' : '90 Days'}
+            </span>
+          </div>
+        </div>
+        
+        {/* Legend/controls */}
         <div className="flex flex-wrap items-center gap-2">
           {viewMode === 'earnings' ? (
             <>

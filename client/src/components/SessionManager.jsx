@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import apiClient from '../utils/apiClient';
 
 const SessionManager = ({ onSessionDeleted }) => {
   const [sessions, setSessions] = useState([]);
@@ -16,7 +17,7 @@ const SessionManager = ({ onSessionDeleted }) => {
   const fetchSessions = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:5000/api/sessions');
+      const response = await apiClient.get('/api/sessions');
       
       if (!response.ok) {
         throw new Error('Failed to fetch sessions');
@@ -43,9 +44,7 @@ const SessionManager = ({ onSessionDeleted }) => {
       setDeleteStatus('deleting');
       const sessionId = selectedSession.id || sessions.indexOf(selectedSession);
       
-      const response = await fetch(`http://localhost:5000/api/sessions/${sessionId}`, {
-        method: 'DELETE',
-      });
+      const response = await apiClient.delete(`/api/sessions/${sessionId}`);
       
       if (!response.ok) {
         throw new Error('Failed to delete session');

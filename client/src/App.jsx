@@ -1,5 +1,8 @@
-import { useState, useCallback, useMemo, lazy, Suspense } from 'react'
+import { useState, useCallback, lazy, Suspense } from 'react'
 import './index.css'
+import { AuthProvider } from './context/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
+import UserMenu from './components/UserMenu'; // Create this component for logout functionality
 
 // OPTIMIZATION: Use lazy loading for components
 const EarningsChart = lazy(() => import('./components/EarningsChart'));
@@ -33,69 +36,76 @@ function App() {
   }, []);
 
   return (
-    <div className="bg-gradient-to-b from-gray-900 to-black text-gray-200 min-h-screen">
-      <div className="max-w-6xl mx-auto p-6">
-        <h1 className="font-sans text-4xl text-center my-8 bg-clip-text text-transparent bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 font-bold">
-          DoorDash Tracker
-        </h1>
-        
-        {/* Tab navigation */}
-        <div className="flex justify-center mb-8">
-          <div className="bg-gray-800/50 p-1 rounded-lg flex">
-            <button
-              onClick={() => handleTabChange('dashboard')}
-              className={`px-4 py-2 rounded-md text-sm font-medium ${
-                activeTab === 'dashboard' 
-                  ? 'bg-blue-600 text-white' 
-                  : 'text-gray-300 hover:text-white hover:bg-gray-700/50'
-              }`}
-            >
-              Dashboard
-            </button>
-            <button
-              onClick={() => handleTabChange('add')}
-              className={`px-4 py-2 rounded-md text-sm font-medium ${
-                activeTab === 'add' 
-                  ? 'bg-purple-600 text-white' 
-                  : 'text-gray-300 hover:text-white hover:bg-gray-700/50'
-              }`}
-            >
-              Add Session
-            </button>
-            <button
-              onClick={() => handleTabChange('manage')}
-              className={`px-4 py-2 rounded-md text-sm font-medium ${
-                activeTab === 'manage' 
-                  ? 'bg-amber-600 text-white' 
-                  : 'text-gray-300 hover:text-white hover:bg-gray-700/50'
-              }`}
-            >
-              Manage Sessions
-            </button>
+    <AuthProvider>
+      <div className="bg-gradient-to-b from-gray-900 to-black text-gray-200 min-h-screen">
+        <div className="max-w-6xl mx-auto p-6">
+          <div className="flex justify-between items-center mb-8">
+            <h1 className="font-sans text-4xl my-8 bg-clip-text text-transparent bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 font-bold">
+              DoorDash Tracker
+            </h1>
+            <UserMenu />
           </div>
+
+          {/* Tab navigation */}
+          <ProtectedRoute>
+            <div className="flex justify-center mb-8">
+              <div className="bg-gray-800/50 p-1 rounded-lg flex">
+                <button
+                  onClick={() => handleTabChange('dashboard')}
+                  className={`px-4 py-2 rounded-md text-sm font-medium ${
+                    activeTab === 'dashboard' 
+                      ? 'bg-blue-600 text-white' 
+                      : 'text-gray-300 hover:text-white hover:bg-gray-700/50'
+                  }`}
+                >
+                  Dashboard
+                </button>
+                <button
+                  onClick={() => handleTabChange('add')}
+                  className={`px-4 py-2 rounded-md text-sm font-medium ${
+                    activeTab === 'add' 
+                      ? 'bg-purple-600 text-white' 
+                      : 'text-gray-300 hover:text-white hover:bg-gray-700/50'
+                  }`}
+                >
+                  Add Session
+                </button>
+                <button
+                  onClick={() => handleTabChange('manage')}
+                  className={`px-4 py-2 rounded-md text-sm font-medium ${
+                    activeTab === 'manage' 
+                      ? 'bg-amber-600 text-white' 
+                      : 'text-gray-300 hover:text-white hover:bg-gray-700/50'
+                  }`}
+                >
+                  Manage Sessions
+                </button>
+              </div>
+            </div>
+
+            {/* Content based on active tab */}
+            <Suspense fallback={<LoadingFallback />}>
+              {activeTab === 'dashboard' && (
+                <>
+                  <EarningsChart key={`chart-${dataRefreshTrigger}`} />
+                  <SummaryCards key={`summary-${dataRefreshTrigger}`} />
+                  <RestaurantDeliveries key={`restaurants-${dataRefreshTrigger}`} />
+                </>
+              )}
+              
+              {activeTab === 'add' && (
+                <SessionInput onSessionAdded={handleDataChanged} />
+              )}
+              
+              {activeTab === 'manage' && (
+                <SessionManager onSessionDeleted={handleDataChanged} />
+              )}
+            </Suspense>
+          </ProtectedRoute>
         </div>
-        
-        {/* Content based on active tab */}
-        <Suspense fallback={<LoadingFallback />}>
-          {activeTab === 'dashboard' && (
-            <>
-              <EarningsChart key={`chart-${dataRefreshTrigger}`} />
-              <SummaryCards key={`summary-${dataRefreshTrigger}`} />
-              <RestaurantDeliveries key={`restaurants-${dataRefreshTrigger}`} />
-            </>
-          )}
-          
-          {activeTab === 'add' && (
-            <SessionInput onSessionAdded={handleDataChanged} />
-          )}
-          
-          {activeTab === 'manage' && (
-            <SessionManager onSessionDeleted={handleDataChanged} />
-          )}
-        </Suspense>
       </div>
-    </div>
-  )
+    </AuthProvider>
+  );
 }
 
 export default App

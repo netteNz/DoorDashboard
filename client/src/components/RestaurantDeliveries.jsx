@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { FixedSizeList as List } from 'react-window';
+import apiClient from '../utils/apiClient';
 
 // Move getMerchantType outside the component
 const getMerchantType = (merchantName) => {
@@ -38,15 +39,22 @@ const RestaurantDeliveries = () => {
     async function fetchData() {
       try {
         setLoading(true);
-        const response = await fetch('http://localhost:5000/api/restaurants');
+        const response = await apiClient.get('/api/restaurants');
         if (!response.ok) {
           throw new Error('Failed to fetch restaurant data');
         }
         const data = await response.json();
         
+        // Add safeguards for processing restaurant data
         const enrichedData = data.map(item => ({
           ...item,
-          merchant_type: getMerchantType(item.name)
+          merchant_type: getMerchantType(item.name),
+          // Ensure numeric values
+          deliveries_count: Number(item.deliveries_count || 0),
+          base_pay_total: Number(item.base_pay_total || 0),
+          tips_total: Number(item.tips_total || 0),
+          total_earnings: Number(item.total_earnings || 0),
+          avg_per_delivery: Number(item.avg_per_delivery || 0)
         }));
         
         setRestaurants(enrichedData);

@@ -1,4 +1,12 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import apiClient from '../utils/apiClient';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { 
+  faStore, faUtensils, faShoppingCart, faTruck, faMapMarker,
+  faBurger, faPizzaSlice, faCoffee, faCapsules, faShoppingBag,
+  faLeaf, faIceCream, faDrumstickBite, faWineBottle
+} from '@fortawesome/free-solid-svg-icons';
+import EarningsChart from './EarningsChart';
 
 const SummaryCards = () => {
   const [summaryData, setSummaryData] = useState({
@@ -24,7 +32,7 @@ const SummaryCards = () => {
         setLoading(true);
         
         // Add cache-busting parameter to prevent stale data
-        const response = await fetch(`http://localhost:5000/api/summary?_=${Date.now()}`);
+        const response = await apiClient.get(`/api/summary?_=${Date.now()}`);
         if (!response.ok) throw new Error('Failed to fetch summary data');
         
         const data = await response.json();
@@ -35,7 +43,7 @@ const SummaryCards = () => {
         // Safety checks for null/undefined values
         const totalEarnings = data.total_earnings || 0;
         const totalGas = data.total_gas || 0;
-        const totalOffers = data.total_deliveries || data.total_offers || 0;
+        const totalOffers = data.total_deliveries || 0;
         const totalDashMin = data.total_dash_min || 0;
         const totalActiveMin = data.total_active_min || 0;
         
@@ -70,7 +78,7 @@ const SummaryCards = () => {
   useEffect(() => {
     const fetchWeeklyData = async () => {
       try {
-        const weeklyResponse = await fetch('http://localhost:5000/api/weekly');
+        const weeklyResponse = await apiClient.get('/api/weekly');
         const weeklyData = await weeklyResponse.json();
         
         // Get most recent week if available
@@ -93,8 +101,18 @@ const SummaryCards = () => {
   useEffect(() => {
     const fetchLocationData = async () => {
       try {
-        const locationResponse = await fetch('http://localhost:5000/api/locations');
+        const locationResponse = await apiClient.get('/api/locations');
         const locationData = await locationResponse.json();
+        
+        // Add safety check
+        if (!Array.isArray(locationData)) {
+          console.error("Expected array but got:", typeof locationData);
+          setSummaryData(prev => ({
+            ...prev,
+            commonLocations: [] // Default to empty array
+          }));
+          return;
+        }
         
         setSummaryData(prev => ({
           ...prev,
@@ -102,6 +120,11 @@ const SummaryCards = () => {
         }));
       } catch (error) {
         console.error('Error fetching location data:', error);
+        // Set empty array on error
+        setSummaryData(prev => ({
+          ...prev,
+          commonLocations: []
+        }));
       }
     };
     
@@ -163,6 +186,103 @@ const SummaryCards = () => {
     setSelectedWeek(week);
   }, [summaryData.weeklyData]);
 
+  // Create an icon selector function
+  const getIconForLocation = (location) => {
+    const name = location.name.toLowerCase();
+    
+    // Fast food restaurants
+    if (name.includes('mcdonald') || name.includes('burger') || 
+        name.includes('wendy') || name.includes('five guys')) 
+      return faBurger;
+    
+    // Pizza places
+    if (name.includes('pizza') || name.includes('domino') || 
+        name.includes('papa john') || name.includes('little caesar'))
+      return faPizzaSlice;
+    
+    // Coffee shops
+    if (name.includes('starbucks') || name.includes('dunkin') || 
+        name.includes('coffee') || name.includes('cafe'))
+      return faCoffee;
+
+    // Pharmacies
+    if (name.includes('walgreens') || name.includes('cvs') || 
+        name.includes('pharmacy') || name.includes('rite aid'))
+      return faCapsules;
+    
+    // Retail/big box
+    if (name.includes('target') || name.includes('walmart') || 
+        name.includes('best buy') || name.includes('store'))
+      return faStore;
+    
+    // Grocery  
+    if (name.includes('grocery') || name.includes('market') || 
+        name.includes('publix') || name.includes('kroger'))
+      return faShoppingBag;
+      
+    // Salad/healthy food
+    if (name.includes('salad') || name.includes('bowl') || 
+        name.includes('green') || name.includes('fresh'))
+      return faLeaf;
+      
+    // Chicken places
+    if (name.includes('chicken') || name.includes('pollo') || 
+        name.includes('chick-fil-a') || name.includes('kfc'))
+      return faDrumstickBite;
+      
+    // Ice cream/desserts
+    if (name.includes('ice cream') || name.includes('yogurt') || 
+        name.includes('sweets') || name.includes('dessert'))
+      return faIceCream;
+        
+    // Restaurants (general)
+    if (name.includes('restaurant') || name.includes('grill') || 
+        name.includes('kitchen') || name.includes('house') || 
+        name.includes('bistro') || name.includes('diner'))
+      return faUtensils;
+      
+    // Bakery/bread
+    if (name.includes('panera') || name.includes('bakery') || 
+        name.includes('bread') || name.includes('pastry'))
+      return faShoppingCart;
+      
+    // Default icon
+    return faMapMarker;
+  };
+
+  // Replace the getIconBackgroundColor function with this getIconColor function
+  const getIconColor = (location) => {
+    const name = location.name.toLowerCase();
+    
+    // Fast food (orange)
+    if (name.includes('mcdonald') || name.includes('burger'))
+      return 'text-orange-500';
+    
+    // Pizza (red)
+    if (name.includes('pizza') || name.includes('domino'))
+      return 'text-red-500';
+    
+    // Pharmacy (blue)
+    if (name.includes('walgreens') || name.includes('cvs'))
+      return 'text-blue-500';
+    
+    // Retail (purple)
+    if (name.includes('target') || name.includes('walmart'))
+      return 'text-purple-500';
+    
+    // Grocery/fresh food (green)
+    if (name.includes('grocery') || name.includes('market') || 
+        name.includes('salad') || name.includes('fresh'))
+      return 'text-emerald-500';
+    
+    // Coffee (brown)
+    if (name.includes('starbucks') || name.includes('coffee'))
+      return 'text-amber-500';
+    
+    // Default (blue)
+    return 'text-blue-500';
+  };
+
   // Week selector component
   const WeekSelector = () => (
     <div className="flex items-center mb-5 bg-gray-900/50 p-3 rounded-lg">
@@ -212,17 +332,19 @@ const SummaryCards = () => {
     </div>
   );
 
-  // Debug display (you can comment this out in production)
-  const renderDebugInfo = () => {
-    if (!debugData) return null;
-    
-    return (
-      <div className="mt-4 p-2 bg-gray-900 rounded text-xs">
-        <p>Debug Info:</p>
-        <pre className="text-green-500">{JSON.stringify(debugData, null, 2)}</pre>
-      </div>
-    );
-  };
+  // Replace the renderDebugInfo function with this console log version
+  const logDebugInfo = useCallback(() => {
+    if (debugData) {
+      console.log("DoorDashboard Debug Info:", debugData);
+    }
+  }, [debugData]);
+
+  // Call this inside useEffect after data is loaded
+  useEffect(() => {
+    if (debugData) {
+      logDebugInfo();
+    }
+  }, [debugData, logDebugInfo]);
 
   // Loading skeleton
   if (loading) {
@@ -242,90 +364,84 @@ const SummaryCards = () => {
     <>
       <WeekSelector />
       
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-        {/* Net Earnings Card */}
-        <div className="bg-gray-800/80 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50 shadow-lg">
-          <h3 className="text-sm font-mono text-gray-400 uppercase tracking-wider mb-1">Net Earnings</h3>
-          <p className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-emerald-500">
-            {formatCurrency(currentData.net)}
-          </p>
-          <div className="text-xs text-gray-500 mt-2 font-mono">
-            {currentData.weekRange}
-          </div>
-        </div>
-
-        {/* Deliveries Made Card */}
-        <div className="bg-gray-800/80 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50 shadow-lg">
+      {/* Metrics Row */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+        {/* Deliveries Made Card - Now wider */}
+        <div className="bg-gray-800/80 backdrop-blur-sm rounded-xl p-5 border border-gray-700/50 shadow-lg">
           <h3 className="text-sm font-mono text-gray-400 uppercase tracking-wider mb-1">Deliveries Made</h3>
           <p className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-500">
             {currentData.deliveries.toLocaleString()}
           </p>
-          <div className="text-xs text-gray-500 mt-2 font-mono">
+          <div className="text-xs text-gray-500 mt-1 font-mono">
             {formatCurrency(currentData.net / (currentData.deliveries || 1))} per delivery
           </div>
         </div>
 
-        {/* Time Efficiency Card */}
-        <div className="bg-gray-800/80 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50 shadow-lg">
-          <h3 className="text-sm font-mono text-gray-400 uppercase tracking-wider mb-1">Time Efficiency</h3>
-          <div className="flex items-end">
-            <p className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-500">
-              {timeEfficiency}%
-            </p>
-            <span className="text-gray-400 text-sm ml-2 mb-1">active/dash</span>
-          </div>
-          <div className="w-full bg-gray-700 rounded-full h-2 mt-3">
-            <div 
-              className="bg-gradient-to-r from-purple-400 to-pink-500 h-2 rounded-full" 
-              style={{ width: `${timeEfficiency}%` }}
-            ></div>
-          </div>
-        </div>
-
         {/* Dash Time Card */}
-        <div className="bg-gray-800/80 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50 shadow-lg">
+        <div className="bg-gray-800/80 backdrop-blur-sm rounded-xl p-5 border border-gray-700/50 shadow-lg">
           <h3 className="text-sm font-mono text-gray-400 uppercase tracking-wider mb-1">Dash Time</h3>
           <p className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-amber-400 to-amber-600">
             {formatTime(currentData.dashTime)}
           </p>
-          <div className="text-xs text-gray-500 mt-2 font-mono">
+          <div className="text-xs text-gray-500 mt-1 font-mono">
             {formatCurrency((currentData.net / (currentData.dashTime / 60)) || 0)}/hour
           </div>
         </div>
 
         {/* Active Time Card */}
-        <div className="bg-gray-800/80 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50 shadow-lg">
+        <div className="bg-gray-800/80 backdrop-blur-sm rounded-xl p-5 border border-gray-700/50 shadow-lg">
           <h3 className="text-sm font-mono text-gray-400 uppercase tracking-wider mb-1">Active Time</h3>
           <p className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-500">
             {formatTime(currentData.activeTime)}
           </p>
-          <div className="text-xs text-gray-500 mt-2 font-mono">
+          <div className="text-xs text-gray-500 mt-1 font-mono">
             {formatCurrency((currentData.net / (currentData.activeTime / 60)) || 0)}/active hour
           </div>
         </div>
-
-        {/* Common Locations Card */}
-        <div className="bg-gray-800/80 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50 shadow-lg">
-          <h3 className="text-sm font-mono text-gray-400 uppercase tracking-wider mb-1">Top Delivery Locations</h3>
-          {summaryData.commonLocations.length > 0 ? (
-            <ul className="mt-2 space-y-2">
-              {summaryData.commonLocations.map((location, idx) => (
-                <li key={idx} className="flex items-center text-sm">
-                  <span className="inline-block w-5 h-5 flex items-center justify-center bg-blue-500 text-white rounded-full text-xs mr-2">
-                    {idx + 1}
-                  </span>
-                  <span className="text-gray-300">{location.name}</span>
-                  <span className="ml-auto text-gray-500 text-xs">{location.count}x</span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-gray-500 text-sm mt-2">No location data available</p>
-          )}
+        
+        {/* Time Efficiency Card */}
+        <div className="bg-gray-800/80 backdrop-blur-sm rounded-xl p-5 border border-gray-700/50 shadow-lg">
+          <h3 className="text-sm font-mono text-gray-400 uppercase tracking-wider mb-1">Time Efficiency</h3>
+          <div className="flex items-center">
+            <p className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-500">
+              {timeEfficiency}%
+            </p>
+            <div className="ml-3 flex-1">
+              <div className="w-full bg-gray-700 rounded-full h-2">
+                <div 
+                  className="bg-gradient-to-r from-purple-400 to-pink-500 h-2 rounded-full" 
+                  style={{ width: `${timeEfficiency}%` }}
+                ></div>
+              </div>
+              <span className="text-xs text-gray-400">active/dash</span>
+            </div>
+          </div>
         </div>
       </div>
-
-      {renderDebugInfo()}
+      
+      
+      {/* Top Locations Card - Now full width or in its own row */}
+      <div className="bg-gray-800/80 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50 shadow-lg mb-6">
+        <h3 className="text-sm font-mono text-gray-400 uppercase tracking-wider mb-3">Top Delivery Locations</h3>
+        {summaryData.commonLocations.length > 0 ? (
+          <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-2">
+            {summaryData.commonLocations.map((location, idx) => (
+              <li key={idx} className="flex items-center text-sm py-1">
+                <FontAwesomeIcon 
+                  icon={getIconForLocation(location)} 
+                  className={`${getIconColor(location)} mr-3`} 
+                  size="lg"
+                  fixedWidth
+                />
+                <span className="text-gray-300">{location.name}</span>
+                <span className="ml-auto text-gray-500 text-xs">{location.count}x</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-gray-500 text-sm mt-2">No location data available</p>
+        )}
+      </div>
     </>
   );
 };

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import apiClient from '../utils/apiClient'; // Adjust the import based on your project structure
 
 const SessionInput = ({ onSessionAdded }) => {
   const [sessionData, setSessionData] = useState({
@@ -85,13 +86,7 @@ const SessionInput = ({ onSessionAdded }) => {
       setLoading(true);
       setError(null);
       
-      const response = await fetch('http://localhost:5000/api/sessions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(sessionData),
-      });
+      const response = await apiClient.post('/api/sessions', sessionData);
       
       if (!response.ok) {
         throw new Error('Failed to add session');
