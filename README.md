@@ -47,8 +47,8 @@ The application implements JWT (JSON Web Tokens) for secure authentication:
 
 - **Deployment**
   - Configure CI/CD pipeline with GitHub Actions
-  - Deploy backend API to a cloud provider (Render, Railway, or AWS)
-  - Set up frontend hosting on Vercel or Netlify
+  - Deploy backend API to a cloud provider (Replit, Azure, AWS) *replit for proof of concept; scale accordingly*
+  - Set up frontend hosting
   - Implement environment-specific configuration
 
 ## API Endpoints
