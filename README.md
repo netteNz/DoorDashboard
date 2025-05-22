@@ -3,7 +3,6 @@
 A full-stack web application for DoorDash drivers to track earnings, analyze performance metrics, and visualize delivery data.
 
 ![Overview](https://github.com/user-attachments/assets/a981b149-1c96-4958-8b6f-0df303e0bb22)
-![Login](https://github.com/user-attachments/assets/b71c5205-75f7-4369-b8f3-cd9af30823e4)
 
 
 ## Features
@@ -34,6 +33,8 @@ npm run dev    # Runs on http://localhost:5173
 ```
 
 ## Authentication
+
+![Login](https://github.com/user-attachments/assets/b71c5205-75f7-4369-b8f3-cd9af30823e4)
 
 The application implements JWT (JSON Web Tokens) for secure authentication:
 - Protected routes require a valid access token
